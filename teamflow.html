@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TeamFlow — Task Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d0f14;--bg2:#13161e;--bg3:#1a1e28;--bg4:#222636;
+    --border:#2a2f3e;--border2:#333a50;
+    --text:#e8eaf2;--text2:#9ba3be;--text3:#6b7494;
+    --accent:#6c63ff;--accent2:#8b85ff;--accent3:#4d44dd;
+    --success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--info:#38bdf8;
+    --radius:10px;--radius2:16px;--radius3:24px;
+    --font-head:'Syne',sans-serif;--font-body:'Inter',sans-serif;--font-mono:'DM Mono',monospace;
+  }
+  body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+  input,textarea,select{font-family:var(--font-body);font-size:14px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius);padding:8px 12px;outline:none;width:100%;transition:border .2s}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+  select option{background:var(--bg3)}
+  button{font-family:var(--font-body);cursor:pointer;border:none;outline:none;transition:all .15s}
+  .btn{padding:8px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2)}
+  .btn-secondary{background:var(--bg4);color:var(--text);border:1px solid var(--border2)}.btn-secondary:hover{background:var(--bg3)}
+  .btn-danger{background:#2a1a1a;color:var(--danger);border:1px solid #3a2020}.btn-danger:hover{background:#3a1a1a}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid transparent}.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+  .tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--font-mono)}
+  .tag-todo{background:#1e2030;color:#7b82ff;border:1px solid #2a2f50}
+  .tag-progress{background:#1e2215;color:#4ade80;border:1px solid #2a3520}
+  .tag-review{background:#201e10;color:#fbbf24;border:1px solid #3a3510}
+  .tag-done{background:#101e15;color:#22c55e;border:1px solid #1a3020}
+  .tag-overdue{background:#201010;color:#f87171;border:1px solid #3a1515}
+  .tag-admin{background:#1a1530;color:#a78bfa;border:1px solid #2a2040}
+  .tag-member{background:#101820;color:#38bdf8;border:1px solid #152030}
+  .priority-high{color:#f87171}.priority-med{color:#fbbf24}.priority-low{color:#4ade80}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:20px}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:1000}
+  .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius2);padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
+  .modal h3{font-family:var(--font-head);font-size:18px;font-weight:700;margin-bottom:20px;color:var(--text)}
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+  .sidebar{width:240px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
+  .main{margin-left:240px;padding:36px;min-height:100vh}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:var(--radius);font-size:14px;cursor:pointer;color:var(--text2);transition:all .15s;margin:2px 8px}
+  .nav-item:hover{background:var(--bg4);color:var(--text)}
+  .nav-item.active{background:rgba(108,99,255,.15);color:var(--accent2);border:1px solid rgba(108,99,255,.25)}
+  .nav-icon{width:20px;text-align:center;font-size:17px}
+  .avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;font-family:var(--font-mono);flex-shrink:0}
+  .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2);padding:22px;display:flex;flex-direction:column;gap:8px}
+  .stat-num{font-family:var(--font-head);font-size:34px;font-weight:800}
+  .stat-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:500}
+  .progress-bar{height:6px;background:var(--bg4);border-radius:4px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:4px;transition:width .5s ease;background:var(--accent)}
+  .task-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:var(--radius);background:var(--bg3);border:1px solid var(--border);margin-bottom:8px;transition:border-color .15s;cursor:pointer}
+  .task-row:hover{border-color:var(--border2)}
+  .section-title{font-family:var(--font-head);font-size:24px;font-weight:700;margin-bottom:24px;color:var(--text)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .tab{padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;color:var(--text2);background:transparent;border:1px solid transparent;transition:all .15s}
+  .tab.active{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+  .empty{text-align:center;padding:56px 16px;color:var(--text3);font-size:14px}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+  .alert{padding:12px 16px;border-radius:var(--radius);font-size:13px;margin-bottom:16px}
+  .alert-danger{background:#1a1010;border:1px solid #3a1515;color:#f87171}
+  .alert-success{background:#101a10;border:1px solid #1a3020;color:#4ade80}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+  @media(max-width:768px){
+    .sidebar{width:200px}
+    .main{margin-left:200px;padding:20px}
+    .grid4{grid-template-columns:1fr 1fr}
+    .grid3{grid-template-columns:1fr 1fr}
+  }
+  @media(max-width:560px){
+    .sidebar{display:none}
+    .main{margin-left:0;padding:16px}
+    .grid4,.grid3,.grid2{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useMemo,useRef}=React;
+
+/* ======== IN-MEMORY DATABASE ======== */
+let DB={
+  users:[
+    {id:'u1',name:'Alex Morgan',email:'admin@teamflow.com',password:'admin123',role:'admin',avatar:'AM',color:'#6c63ff'},
+    {id:'u2',name:'Sam Lee',email:'sam@teamflow.com',password:'member123',role:'member',avatar:'SL',color:'#22c55e'},
+    {id:'u3',name:'Jordan Kim',email:'jordan@teamflow.com',password:'member123',role:'member',avatar:'JK',color:'#f59e0b'},
+    {id:'u4',name:'Riley Park',email:'riley@teamflow.com',password:'member123',role:'member',avatar:'RP',color:'#ef4444'},
+  ],
+  projects:[
+    {id:'p1',name:'Website Redesign',description:'Overhaul company website with new brand identity',ownerId:'u1',members:['u1','u2','u3'],createdAt:'2025-01-10',color:'#6c63ff'},
+    {id:'p2',name:'Mobile App v2',description:'Launch the next generation mobile application',ownerId:'u1',members:['u1','u2','u4'],createdAt:'2025-02-01',color:'#22c55e'},
+    {id:'p3',name:'API Integration',description:'Connect third-party services and payment providers',ownerId:'u2',members:['u2','u3','u4'],createdAt:'2025-03-05',color:'#f59e0b'},
+  ],
+  tasks:[
+    {id:'t1',title:'Design new homepage wireframes',description:'Create lo-fi and hi-fi wireframes for the homepage redesign',projectId:'p1',assigneeId:'u2',priority:'high',status:'done',dueDate:'2025-04-10',createdAt:'2025-01-15',createdBy:'u1',comments:[]},
+    {id:'t2',title:'Implement responsive navbar',description:'Build the new navigation component with mobile support',projectId:'p1',assigneeId:'u3',priority:'high',status:'progress',dueDate:'2025-04-20',createdAt:'2025-01-18',createdBy:'u1',comments:[]},
+    {id:'t3',title:'Content migration to new CMS',description:'Move all existing content to the new CMS platform',projectId:'p1',assigneeId:'u2',priority:'med',status:'todo',dueDate:'2025-05-10',createdAt:'2025-02-01',createdBy:'u1',comments:[]},
+    {id:'t4',title:'User authentication flow',description:'Implement OAuth and JWT-based authentication',projectId:'p2',assigneeId:'u4',priority:'high',status:'review',dueDate:'2025-04-15',createdAt:'2025-02-05',createdBy:'u1',comments:[]},
+    {id:'t5',title:'Push notification system',description:'Set up Firebase push notifications for iOS and Android',projectId:'p2',assigneeId:'u2',priority:'med',status:'progress',dueDate:'2025-04-28',createdAt:'2025-02-10',createdBy:'u1',comments:[]},
+    {id:'t6',title:'App store submission',description:'Prepare assets and submit app for App Store review',projectId:'p2',assigneeId:'u4',priority:'high',status:'todo',dueDate:'2025-03-01',createdAt:'2025-02-15',createdBy:'u1',comments:[]},
+    {id:'t7',title:'Stripe payment integration',description:'Integrate Stripe API for one-time and recurring payments',projectId:'p3',assigneeId:'u3',priority:'high',status:'done',dueDate:'2025-03-20',createdAt:'2025-03-06',createdBy:'u2',comments:[]},
+    {id:'t8',title:'Webhook event handling',description:'Build a robust webhook processing system with retries',projectId:'p3',assigneeId:'u4',priority:'med',status:'progress',dueDate:'2025-04-30',createdAt:'2025-03-10',createdBy:'u2',comments:[]},
+    {id:'t9',title:'Write API documentation',description:'Full API documentation with examples in Postman',projectId:'p3',assigneeId:'u2',priority:'low',status:'todo',dueDate:'2025-05-20',createdAt:'2025-03-15',createdBy:'u2',comments:[]},
+  ],
+  nextId:100,
+};
+function genId(prefix){return `${prefix}${++DB.nextId}`;}
+
+/* ======== REST API LAYER ======== */
+const API={
+  /* AUTH */
+  login:(email,password)=>{
+    const user=DB.users.find(u=>u.email===email&&u.password===password);
+    if(!user)throw new Error('Invalid email or password');
+    return {...user};
+  },
+  signup:(name,email,password,role='member')=>{
+    if(!name.trim())throw new Error('Name is required');
+    if(!email.includes('@'))throw new Error('Invalid email address');
+    if(password.length<6)throw new Error('Password must be at least 6 characters');
+    if(DB.users.find(u=>u.email===email))throw new Error('Email already registered');
+    const initials=name.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2);
+    const colors=['#6c63ff','#22c55e','#f59e0b','#ef4444','#38bdf8','#a78bfa','#fb923c','#ec4899'];
+    const user={id:genId('u'),name:name.trim(),email,password,role,avatar:initials,color:colors[DB.users.length%colors.length]};
+    DB.users.push(user);
+    return {...user};
+  },
+  /* PROJECTS */
+  getProjects:(userId,role)=>{
+    if(role==='admin')return [...DB.projects];
+    return DB.projects.filter(p=>p.members.includes(userId));
+  },
+  createProject:(data,userId)=>{
+    if(!data.name?.trim())throw new Error('Project name is required');
+    const p={id:genId('p'),createdAt:new Date().toISOString().slice(0,10),members:[userId],ownerId:userId,color:'#6c63ff',...data,name:data.name.trim()};
+    DB.projects.push(p);return {...p};
+  },
+  updateProject:(id,data,userId,role)=>{
+    const p=DB.projects.find(x=>x.id===id);
+    if(!p)throw new Error('Project not found');
+    if(role!=='admin'&&p.ownerId!==userId)throw new Error('Only the project owner or an admin can edit this project');
+    Object.assign(p,data);return {...p};
+  },
+  deleteProject:(id,userId,role)=>{
+    const p=DB.projects.find(x=>x.id===id);
+    if(!p)throw new Error('Project not found');
+    if(role!=='admin'&&p.ownerId!==userId)throw new Error('Only the project owner or an admin can delete this project');
+    DB.projects=DB.projects.filter(x=>x.id!==id);
+    DB.tasks=DB.tasks.filter(t=>t.projectId!==id);
+  },
+  addMember:(projectId,email,userId,role)=>{
+    const p=DB.projects.find(x=>x.id===projectId);
+    if(!p)throw new Error('Project not found');
+    if(role!=='admin'&&p.ownerId!==userId)throw new Error('Only the project owner or an admin can add members');
+    const user=DB.users.find(u=>u.email===email);
+    if(!user)throw new Error('No user found with that email');
+    if(p.members.includes(user.id))throw new Error('User is already a member');
+    p.members.push(user.id);return {...user};
+  },
+  removeMember:(projectId,memberId,userId,role)=>{
+    const p=DB.projects.find(x=>x.id===projectId);
+    if(!p)throw new Error('Project not found');
+    if(role!=='admin'&&p.ownerId!==userId)throw new Error('Forbidden');
+    if(memberId===p.ownerId)throw new Error('Cannot remove the project owner');
+    p.members=p.members.filter(id=>id!==memberId);
+  },
+  /* TASKS */
+  getTasks:(userId,role,projectId)=>{
+    let tasks=DB.tasks;
+    if(role!=='admin')tasks=tasks.filter(t=>{const p=DB.projects.find(x=>x.id===t.projectId);return p&&p.members.includes(userId);});
+    if(projectId)tasks=tasks.filter(t=>t.projectId===projectId);
+    return tasks;
+  },
+  createTask:(data,userId)=>{
+    if(!data.title?.trim())throw new Error('Task title is required');
+    if(!data.projectId)throw new Error('Project is required');
+    const t={id:genId('t'),createdAt:new Date().toISOString().slice(0,10),createdBy:userId,comments:[],priority:'med',status:'todo',...data,title:data.title.trim()};
+    DB.tasks.push(t);return {...t};
+  },
+  updateTask:(id,data,userId,role)=>{
+    const t=DB.tasks.find(x=>x.id===id);
+    if(!t)throw new Error('Task not found');
+    const p=DB.projects.find(x=>x.id===t.projectId);
+    if(role!=='admin'&&!p?.members.includes(userId))throw new Error('You do not have access to this task');
+    Object.assign(t,data);return {...t};
+  },
+  deleteTask:(id,userId,role)=>{
+    const t=DB.tasks.find(x=>x.id===id);
+    if(!t)throw new Error('Task not found');
+    if(role!=='admin'&&t.createdBy!==userId)throw new Error('Only the task creator or an admin can delete this task');
+    DB.tasks=DB.tasks.filter(x=>x.id!==id);
+  },
+  addComment:(taskId,text,userId)=>{
+    const t=DB.tasks.find(x=>x.id===taskId);
+    if(!t)throw new Error('Task not found');
+    if(!text.trim())throw new Error('Comment cannot be empty');
+    const c={id:genId('c'),text:text.trim(),userId,createdAt:new Date().toISOString().slice(0,10)};
+    t.comments.push(c);return c;
+  },
+  getUsers:()=>DB.users.map(({password,...u})=>u),
+};
+
+/* ======== UTILS ======== */
+const today=new Date().toISOString().slice(0,10);
+function isOverdue(task){return task.status!=='done'&&task.dueDate&&task.dueDate<today;}
+function getStatusTag(task){
+  if(isOverdue(task))return React.createElement('span',{className:'tag tag-overdue'},'overdue');
+  const map={todo:'tag-todo',progress:'tag-progress',review:'tag-review',done:'tag-done'};
+  const labels={todo:'to do',progress:'in progress',review:'in review',done:'done'};
+  return React.createElement('span',{className:`tag ${map[task.status]||'tag-todo'}`},labels[task.status]||task.status);
+}
+function getPriorityIcon(p){return p==='high'?'↑':p==='low'?'↓':'→';}
+
+function Avatar({user,size=32}){
+  if(!user)return<div style={{width:size,height:size,borderRadius:'50%',background:'#2a2f3e',display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*.35,fontFamily:'DM Mono',color:'#6b7494',flexShrink:0}}>?</div>;
+  return<div style={{width:size,height:size,borderRadius:'50%',background:user.color+'22',border:`2px solid ${user.color}55`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:size*.35,fontFamily:'DM Mono',color:user.color,flexShrink:0}}>{user.avatar}</div>;
+}
+
+/* ======== MODAL ======== */
+function Modal({title,onClose,children}){
+  useEffect(()=>{
+    const h=e=>{if(e.key==='Escape')onClose();};
+    window.addEventListener('keydown',h);
+    return()=>window.removeEventListener('keydown',h);
+  },[onClose]);
+  return<div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div className="modal">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+        <h3 style={{margin:0}}>{title}</h3>
+        <button className="btn btn-ghost" style={{padding:'4px 10px'}} onClick={onClose}>✕</button>
+      </div>
+      {children}
+    </div>
+  </div>;
+}
+
+/* ======== AUTH SCREEN ======== */
+function AuthScreen({onAuth}){
+  const[mode,setMode]=useState('login');
+  const[name,setName]=useState('');
+  const[email,setEmail]=useState('');
+  const[pw,setPw]=useState('');
+  const[err,setErr]=useState('');
+  const submit=()=>{
+    setErr('');
+    try{
+      if(mode==='login'){const u=API.login(email,pw);onAuth(u);}
+      else{const u=API.signup(name,email,pw);onAuth(u);}
+    }catch(e){setErr(e.message);}
+  };
+  return<div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
+    <div style={{width:400,zIndex:1}}>
+      <div style={{textAlign:'center',marginBottom:40}}>
+        <div style={{fontFamily:'var(--font-head)',fontSize:36,fontWeight:800,color:'var(--text)',marginBottom:8,letterSpacing:'-1px'}}>
+          Team<span style={{color:'var(--accent)'}}>Flow</span>
+        </div>
+        <p style={{color:'var(--text3)',fontSize:14}}>Collaborative project &amp; task management</p>
+      </div>
+      <div className="card">
+        <div style={{display:'flex',gap:8,marginBottom:24}}>
+          {['login','signup'].map(m=><button key={m} className={`tab${mode===m?' active':''}`} style={{flex:1}} onClick={()=>{setMode(m);setErr('');}}>
+            {m==='login'?'Sign In':'Sign Up'}
+          </button>)}
+        </div>
+        {err&&<div className="alert alert-danger">{err}</div>}
+        {mode==='signup'&&<div className="form-group"><label>Full Name</label><input placeholder="Your full name" value={name} onChange={e=>setName(e.target.value)}/></div>}
+        <div className="form-group"><label>Email</label><input type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/></div>
+        <div className="form-group"><label>Password</label><input type="password" placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==='Enter'&&submit()}/></div>
+        <button className="btn btn-primary" style={{width:'100%',padding:'11px',justifyContent:'center',fontSize:15,marginBottom:16}} onClick={submit}>
+          {mode==='login'?'Sign In →':'Create Account →'}
+        </button>
+        {mode==='login'&&<div style={{padding:14,background:'var(--bg3)',borderRadius:'var(--radius)',fontSize:12,color:'var(--text3)',lineHeight:1.7}}>
+          <p style={{marginBottom:4,fontWeight:600,color:'var(--text2)',fontSize:13}}>Demo accounts</p>
+          <p>🛡️ Admin: admin@teamflow.com / admin123</p>
+          <p>👤 Member: sam@teamflow.com / member123</p>
+          <p>👤 Member: jordan@teamflow.com / member123</p>
+        </div>}
+      </div>
+    </div>
+  </div>;
+}
+
+/* ======== DASHBOARD ======== */
+function Dashboard({user}){
+  const tasks=API.getTasks(user.id,user.role);
+  const projects=API.getProjects(user.id,user.role);
+  const myTasks=tasks.filter(t=>t.assigneeId===user.id);
+  const overdueTasks=tasks.filter(isOverdue);
+  const doneTasks=tasks.filter(t=>t.status==='done');
+  const inProgressTasks=tasks.filter(t=>t.status==='progress');
+  const recentTasks=[...tasks].reverse().slice(0,6);
+  return<div>
+    <div style={{marginBottom:32}}>
+      <div style={{fontFamily:'var(--font-head)',fontSize:28,fontWeight:700,color:'var(--text)',letterSpacing:'-0.5px'}}>
+        Good day, {user.name.split(' ')[0]} 👋
+      </div>
+      <p style={{color:'var(--text3)',fontSize:14,marginTop:6}}>Here's an overview of your projects and tasks</p>
+    </div>
+    <div className="grid4" style={{marginBottom:28}}>
+      {[
+        {label:'Total Tasks',val:tasks.length,color:'var(--accent)',icon:'📋'},
+        {label:'In Progress',val:inProgressTasks.length,color:'var(--info)',icon:'⚡'},
+        {label:'Overdue',val:overdueTasks.length,color:'var(--danger)',icon:'🔥'},
+        {label:'Completed',val:doneTasks.length,color:'var(--success)',icon:'✅'},
+      ].map(s=><div key={s.label} className="stat-card">
+        <span style={{fontSize:24}}>{s.icon}</span>
+        <div className="stat-num" style={{color:s.color}}>{s.val}</div>
+        <div className="stat-label">{s.label}</div>
+      </div>)}
+    </div>
+    <div className="grid2" style={{marginBottom:24}}>
+      <div className="card">
+        <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:16,marginBottom:20}}>Project Progress</div>
+        {projects.length===0&&<div className="empty" style={{padding:'24px 0'}}>No projects yet</div>}
+        {projects.map(p=>{
+          const ptasks=tasks.filter(t=>t.projectId===p.id);
+          const pdone=ptasks.filter(t=>t.status==='done').length;
+          const pct=ptasks.length?Math.round(pdone/ptasks.length*100):0;
+          const overdue=ptasks.filter(isOverdue).length;
+          return<div key={p.id} style={{marginBottom:20}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+              <span style={{fontSize:14,fontWeight:500,color:'var(--text)'}}>{p.name}</span>
+              <span style={{fontSize:12,color:'var(--text3)',fontFamily:'var(--font-mono)'}}>{pct}%</span>
+            </div>
+            <div className="progress-bar" style={{marginBottom:4}}><div className="progress-fill" style={{width:`${pct}%`,background:p.color}}/></div>
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--text3)'}}>
+              <span>{pdone} / {ptasks.length} tasks done</span>
+              {overdue>0&&<span style={{color:'var(--danger)'}}>⚠ {overdue} overdue</span>}
+            </div>
+          </div>;
+        })}
+      </div>
+      <div className="card">
+        <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:16,marginBottom:20}}>Recent Activity</div>
+        {recentTasks.map(t=>{
+          const assignee=DB.users.find(u=>u.id===t.assigneeId);
+          const project=DB.projects.find(p=>p.id===t.projectId);
+          return<div key={t.id} style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+            <Avatar user={assignee} size={30}/>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:500,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',color:'var(--text)'}}>{t.title}</div>
+              <div style={{fontSize:11,color:'var(--text3)',marginTop:1}}>{project?.name}</div>
+            </div>
+            {getStatusTag(t)}
+          </div>;
+        })}
+        {!recentTasks.length&&<div className="empty" style={{padding:'24px 0'}}>No tasks yet</div>}
+      </div>
+    </div>
+    {overdueTasks.length>0&&<div style={{padding:20,background:'#1a0f0f',border:'1px solid #3a1515',borderRadius:'var(--radius2)'}}>
+      <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:15,color:'#f87171',marginBottom:14}}>🔥 Overdue Tasks ({overdueTasks.length})</div>
+      {overdueTasks.map(t=>{
+        const assignee=DB.users.find(u=>u.id===t.assigneeId);
+        return<div key={t.id} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10,padding:'8px 12px',background:'rgba(0,0,0,.2)',borderRadius:'var(--radius)'}}>
+          <Avatar user={assignee} size={26}/>
+          <span style={{flex:1,fontSize:13,color:'var(--text)'}}>{t.title}</span>
+          <span style={{fontSize:11,color:'#f87171',fontFamily:'var(--font-mono)'}}>Due {t.dueDate}</span>
+          <span className="chip" style={{fontSize:10}}>{DB.projects.find(p=>p.id===t.projectId)?.name}</span>
+        </div>;
+      })}
+    </div>}
+  </div>;
+}
+
+/* ======== PROJECTS ======== */
+function ProjectForm({onSave,onClose,initial={}}){
+  const[name,setName]=useState(initial.name||'');
+  const[desc,setDesc]=useState(initial.description||'');
+  const[color,setColor]=useState(initial.color||'#6c63ff');
+  const[err,setErr]=useState('');
+  const colors=['#6c63ff','#22c55e','#f59e0b','#ef4444','#38bdf8','#a78bfa','#fb923c','#ec4899','#14b8a6'];
+  const save=()=>{
+    if(!name.trim()){setErr('Project name is required');return;}
+    onSave({name:name.trim(),description:desc,color});
+  };
+  return<>
+    {err&&<div className="alert alert-danger">{err}</div>}
+    <div className="form-group"><label>Project Name</label><input placeholder="e.g. Website Redesign" value={name} onChange={e=>setName(e.target.value)}/></div>
+    <div className="form-group"><label>Description</label><textarea rows={3} placeholder="What is this project about?" value={desc} onChange={e=>setDesc(e.target.value)} style={{resize:'vertical'}}/></div>
+    <div className="form-group"><label>Project Color</label>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',marginTop:4}}>
+        {colors.map(c=><div key={c} onClick={()=>setColor(c)} style={{width:30,height:30,borderRadius:'50%',background:c,cursor:'pointer',border:color===c?'3px solid #fff':'3px solid transparent',transition:'border .15s,transform .1s',transform:color===c?'scale(1.1)':'scale(1)'}}/>)}
+      </div>
+    </div>
+    <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:8}}>
+      <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      <button className="btn btn-primary" onClick={save}>Save Project</button>
+    </div>
+  </>;
+}
+
+function MembersModal({project,user,onClose}){
+  const[email,setEmail]=useState('');
+  const[err,setErr]=useState('');
+  const[members,setMembers]=useState(project.members.map(id=>DB.users.find(u=>u.id===id)).filter(Boolean));
+  const canManage=user.role==='admin'||project.ownerId===user.id;
+  const add=()=>{
+    setErr('');
+    try{const u=API.addMember(project.id,email,user.id,user.role);setMembers(m=>[...m,u]);setEmail('');}
+    catch(e){setErr(e.message);}
+  };
+  const remove=(memberId)=>{
+    try{API.removeMember(project.id,memberId,user.id,user.role);setMembers(m=>m.filter(u=>u.id!==memberId));}
+    catch(e){setErr(e.message);}
+  };
+  return<Modal title={`Team — ${project.name}`} onClose={onClose}>
+    {canManage&&<>
+      {err&&<div className="alert alert-danger">{err}</div>}
+      <div className="form-group"><label>Add Member by Email</label>
+        <div style={{display:'flex',gap:8}}>
+          <input placeholder="member@example.com" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&add()}/>
+          <button className="btn btn-primary" style={{flexShrink:0,whiteSpace:'nowrap'}} onClick={add}>Add</button>
+        </div>
+        <div style={{fontSize:11,color:'var(--text3)',marginTop:6}}>Available: sam@teamflow.com, jordan@teamflow.com, riley@teamflow.com</div>
+      </div>
+    </>}
+    <div>
+      {members.map(m=><div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:'1px solid var(--border)'}}>
+        <Avatar user={m} size={34}/>
+        <div style={{flex:1}}>
+          <div style={{fontSize:14,fontWeight:500}}>{m.name}</div>
+          <div style={{fontSize:11,color:'var(--text3)'}}>{m.email}</div>
+        </div>
+        <span className={`tag ${m.role==='admin'?'tag-admin':'tag-member'}`}>{m.role}</span>
+        {m.id===project.ownerId&&<span className="chip">owner</span>}
+        {canManage&&m.id!==project.ownerId&&m.id!==user.id&&
+          <button className="btn btn-ghost" style={{padding:'2px 8px',fontSize:12,color:'var(--danger)'}} onClick={()=>remove(m.id)}>✕</button>}
+      </div>)}
+    </div>
+  </Modal>;
+}
+
+function Projects({user}){
+  const[projects,setProjects]=useState(()=>API.getProjects(user.id,user.role));
+  const[modal,setModal]=useState(null);
+  const[editProject,setEditProject]=useState(null);
+  const[membersProject,setMembersProject]=useState(null);
+  const[err,setErr]=useState('');
+  const allTasks=API.getTasks(user.id,user.role);
+  const refresh=()=>setProjects(API.getProjects(user.id,user.role));
+  const createProject=data=>{try{API.createProject(data,user.id);refresh();setModal(null);}catch(e){setErr(e.message);}};
+  const updateProject=(id,data)=>{try{API.updateProject(id,data,user.id,user.role);refresh();setEditProject(null);}catch(e){setErr(e.message);}};
+  const deleteProject=id=>{if(!window.confirm('Delete this project and all its tasks? This cannot be undone.'))return;try{API.deleteProject(id,user.id,user.role);refresh();}catch(e){setErr(e.message);}};
+  return<div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:28}}>
+      <div className="section-title" style={{margin:0}}>Projects</div>
+      <button className="btn btn-primary" onClick={()=>setModal('create')}>+ New Project</button>
+    </div>
+    {err&&<div className="alert alert-danger" onClick={()=>setErr('')} style={{cursor:'pointer'}}>{err} (click to dismiss)</div>}
+    {!projects.length&&<div className="empty">No projects yet. Create your first project to get started!</div>}
+    <div className="grid3">
+      {projects.map(p=>{
+        const ptasks=allTasks.filter(t=>t.projectId===p.id);
+        const pdone=ptasks.filter(t=>t.status==='done').length;
+        const pct=ptasks.length?Math.round(pdone/ptasks.length*100):0;
+        const overdue=ptasks.filter(isOverdue).length;
+        const inProgress=ptasks.filter(t=>t.status==='progress').length;
+        const canEdit=user.role==='admin'||p.ownerId===user.id;
+        return<div key={p.id} className="card" style={{borderTop:`3px solid ${p.color}`,display:'flex',flexDirection:'column'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:16,color:'var(--text)',marginBottom:4}}>{p.name}</div>
+              <div style={{width:8,height:8,borderRadius:'50%',background:p.color,display:'inline-block'}}/>
+            </div>
+            {canEdit&&<div style={{display:'flex',gap:4}}>
+              <button className="btn btn-ghost" style={{padding:'3px 7px',fontSize:14}} title="Edit" onClick={()=>setEditProject(p)}>✏️</button>
+              <button className="btn btn-ghost" style={{padding:'3px 7px',fontSize:14}} title="Delete" onClick={()=>deleteProject(p.id)}>🗑️</button>
+            </div>}
+          </div>
+          <p style={{fontSize:13,color:'var(--text3)',marginBottom:16,flex:1,lineHeight:1.6,minHeight:40}}>{p.description||'No description.'}</p>
+          <div className="progress-bar" style={{marginBottom:6}}><div className="progress-fill" style={{width:`${pct}%`,background:p.color}}/></div>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--text3)',marginBottom:14}}>
+            <span>{pdone}/{ptasks.length} done</span>
+            {overdue>0&&<span style={{color:'var(--danger)'}}>⚠ {overdue} overdue</span>}
+            {inProgress>0&&<span style={{color:'var(--info)'}}>⚡ {inProgress} active</span>}
+            <span style={{fontFamily:'var(--font-mono)'}}>{pct}%</span>
+          </div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{display:'flex'}}>
+              {p.members.slice(0,5).map((mid,i)=>{const m=DB.users.find(u=>u.id===mid);return m?<div key={mid} style={{marginLeft:i?-10:0,zIndex:10-i}}><Avatar user={m} size={26}/></div>:null;})}
+              {p.members.length>5&&<div style={{marginLeft:-10,width:26,height:26,borderRadius:'50%',background:'var(--bg4)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:'var(--text3)'}}>+{p.members.length-5}</div>}
+            </div>
+            <button className="btn btn-ghost" style={{fontSize:12,padding:'4px 10px'}} onClick={()=>setMembersProject(p)}>👥 Team</button>
+          </div>
+        </div>;
+      })}
+    </div>
+    {modal==='create'&&<Modal title="New Project" onClose={()=>setModal(null)}><ProjectForm onSave={createProject} onClose={()=>setModal(null)}/></Modal>}
+    {editProject&&<Modal title="Edit Project" onClose={()=>setEditProject(null)}><ProjectForm initial={editProject} onSave={d=>updateProject(editProject.id,d)} onClose={()=>setEditProject(null)}/></Modal>}
+    {membersProject&&<MembersModal project={membersProject} user={user} onClose={()=>{setMembersProject(null);refresh();}}/>}
+  </div>;
+}
+
+/* ======== TASKS ======== */
+function TaskForm({user,onSave,onClose,initial={},projects}){
+  const[title,setTitle]=useState(initial.title||'');
+  const[desc,setDesc]=useState(initial.description||'');
+  const[projectId,setProjectId]=useState(initial.projectId||projects[0]?.id||'');
+  const[assigneeId,setAssigneeId]=useState(initial.assigneeId||user.id);
+  const[priority,setPriority]=useState(initial.priority||'med');
+  const[status,setStatus]=useState(initial.status||'todo');
+  const[dueDate,setDueDate]=useState(initial.dueDate||'');
+  const[err,setErr]=useState('');
+  const projectMembers=useMemo(()=>{
+    const p=DB.projects.find(x=>x.id===projectId);
+    if(!p)return[];
+    return p.members.map(id=>DB.users.find(u=>u.id===id)).filter(Boolean);
+  },[projectId]);
+  const save=()=>{
+    if(!title.trim()){setErr('Task title is required');return;}
+    if(!projectId){setErr('Please select a project');return;}
+    onSave({title:title.trim(),description:desc,projectId,assigneeId,priority,status,dueDate});
+  };
+  return<>
+    {err&&<div className="alert alert-danger">{err}</div>}
+    <div className="form-group"><label>Task Title</label><input placeholder="What needs to be done?" value={title} onChange={e=>setTitle(e.target.value)}/></div>
+    <div className="form-group"><label>Description</label><textarea rows={2} placeholder="Add more context..." value={desc} onChange={e=>setDesc(e.target.value)} style={{resize:'vertical'}}/></div>
+    <div className="grid2">
+      <div className="form-group"><label>Project</label>
+        <select value={projectId} onChange={e=>{setProjectId(e.target.value);setAssigneeId(user.id);}}>
+          {projects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </div>
+      <div className="form-group"><label>Assignee</label>
+        <select value={assigneeId} onChange={e=>setAssigneeId(e.target.value)}>
+          {projectMembers.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}
+        </select>
+      </div>
+      <div className="form-group"><label>Priority</label>
+        <select value={priority} onChange={e=>setPriority(e.target.value)}>
+          <option value="high">↑ High</option>
+          <option value="med">→ Medium</option>
+          <option value="low">↓ Low</option>
+        </select>
+      </div>
+      <div className="form-group"><label>Status</label>
+        <select value={status} onChange={e=>setStatus(e.target.value)}>
+          <option value="todo">To Do</option>
+          <option value="progress">In Progress</option>
+          <option value="review">In Review</option>
+          <option value="done">Done</option>
+        </select>
+      </div>
+    </div>
+    <div className="form-group"><label>Due Date</label><input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></div>
+    <div style={{display:'flex',gap:8,justifyContent:'flex-end',marginTop:8}}>
+      <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      <button className="btn btn-primary" onClick={save}>Save Task</button>
+    </div>
+  </>;
+}
+
+function TaskDetail({task,user,onUpdate,onClose}){
+  const[comment,setComment]=useState('');
+  const[localTask,setLocalTask]=useState({...task});
+  const[err,setErr]=useState('');
+  const project=DB.projects.find(p=>p.id===localTask.projectId);
+  const assignee=DB.users.find(u=>u.id===localTask.assigneeId);
+  const creator=DB.users.find(u=>u.id===localTask.createdBy);
+  const statusOptions=[{v:'todo',l:'To Do'},{v:'progress',l:'In Progress'},{v:'review',l:'In Review'},{v:'done',l:'Done'}];
+  const updateStatus=s=>{
+    try{API.updateTask(localTask.id,{status:s},user.id,user.role);setLocalTask(t=>({...t,status:s}));onUpdate();}
+    catch(e){setErr(e.message);}
+  };
+  const addComment=()=>{
+    if(!comment.trim())return;
+    try{
+      const c=API.addComment(localTask.id,comment,user.id);
+      setLocalTask(t=>({...t,comments:[...t.comments,c]}));
+      setComment('');
+    }catch(e){setErr(e.message);}
+  };
+  return<Modal title="" onClose={onClose}>
+    <div>
+      {err&&<div className="alert alert-danger">{err}</div>}
+      <div style={{marginBottom:16}}>
+        <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:19,marginBottom:10,lineHeight:1.3}}>{localTask.title}</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+          {getStatusTag(localTask)}
+          <span className={`tag priority-${localTask.priority}`}>{getPriorityIcon(localTask.priority)} {localTask.priority} priority</span>
+          {project&&<span className="chip" style={{background:project.color+'22',color:project.color,borderColor:project.color+'44'}}>{project.name}</span>}
+        </div>
+      </div>
+      {localTask.description&&<p style={{fontSize:13,color:'var(--text2)',marginBottom:16,lineHeight:1.7,padding:'12px',background:'var(--bg3)',borderRadius:'var(--radius)'}}>{localTask.description}</p>}
+      <div className="grid2" style={{marginBottom:16}}>
+        <div style={{padding:'10px 12px',background:'var(--bg3)',borderRadius:'var(--radius)'}}>
+          <div style={{fontSize:11,color:'var(--text3)',marginBottom:6,textTransform:'uppercase',letterSpacing:'.5px'}}>Assignee</div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}><Avatar user={assignee} size={24}/><span style={{fontSize:13,fontWeight:500}}>{assignee?.name||'Unassigned'}</span></div>
+        </div>
+        <div style={{padding:'10px 12px',background:'var(--bg3)',borderRadius:'var(--radius)'}}>
+          <div style={{fontSize:11,color:'var(--text3)',marginBottom:6,textTransform:'uppercase',letterSpacing:'.5px'}}>Due Date</div>
+          <div style={{fontSize:13,fontWeight:500,color:isOverdue(localTask)?'var(--danger)':'var(--text)'}}>{localTask.dueDate||'No due date'}</div>
+        </div>
+      </div>
+      <div style={{marginBottom:20}}>
+        <div style={{fontSize:11,color:'var(--text3)',marginBottom:10,textTransform:'uppercase',letterSpacing:'.5px'}}>Update Status</div>
+        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+          {statusOptions.map(s=><button key={s.v} className={`btn ${localTask.status===s.v?'btn-primary':'btn-secondary'}`} style={{padding:'5px 12px',fontSize:12}} onClick={()=>updateStatus(s.v)}>{s.l}</button>)}
+        </div>
+      </div>
+      <div>
+        <div style={{fontSize:11,color:'var(--text3)',marginBottom:12,textTransform:'uppercase',letterSpacing:'.5px'}}>Comments ({localTask.comments.length})</div>
+        <div style={{maxHeight:200,overflowY:'auto',marginBottom:12}}>
+          {localTask.comments.map(c=>{
+            const cu=DB.users.find(u=>u.id===c.userId);
+            return<div key={c.id} style={{display:'flex',gap:10,marginBottom:12}}>
+              <Avatar user={cu} size={26}/>
+              <div style={{flex:1,background:'var(--bg3)',borderRadius:'var(--radius)',padding:'8px 12px'}}>
+                <div style={{fontSize:11,color:'var(--text3)',marginBottom:4}}>{cu?.name} · {c.createdAt}</div>
+                <div style={{fontSize:13,color:'var(--text)',lineHeight:1.5}}>{c.text}</div>
+              </div>
+            </div>;
+          })}
+          {!localTask.comments.length&&<div style={{fontSize:13,color:'var(--text3)',textAlign:'center',padding:'16px 0'}}>No comments yet</div>}
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <Avatar user={user} size={28}/>
+          <input placeholder="Write a comment..." value={comment} onChange={e=>setComment(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addComment()} style={{flex:1}}/>
+          <button className="btn btn-primary" style={{flexShrink:0}} onClick={addComment}>Post</button>
+        </div>
+      </div>
+    </div>
+  </Modal>;
+}
+
+function Tasks({user}){
+  const allProjects=API.getProjects(user.id,user.role);
+  const[filter,setFilter]=useState('all');
+  const[projectFilter,setProjectFilter]=useState('all');
+  const[tasks,setTasks]=useState(()=>API.getTasks(user.id,user.role));
+  const[modal,setModal]=useState(null);
+  const[editTask,setEditTask]=useState(null);
+  const[detailTask,setDetailTask]=useState(null);
+  const[err,setErr]=useState('');
+  const refresh=()=>setTasks(API.getTasks(user.id,user.role));
+  const filtered=useMemo(()=>{
+    let t=tasks;
+    if(projectFilter!=='all')t=t.filter(x=>x.projectId===projectFilter);
+    if(filter==='mine')t=t.filter(x=>x.assigneeId===user.id);
+    else if(filter==='overdue')t=t.filter(isOverdue);
+    else if(filter!=='all')t=t.filter(x=>x.status===filter);
+    return t;
+  },[tasks,filter,projectFilter]);
+  const createTask=data=>{try{API.createTask(data,user.id);refresh();setModal(null);}catch(e){setErr(e.message);}};
+  const updateTask=(id,data)=>{try{API.updateTask(id,data,user.id,user.role);refresh();setEditTask(null);}catch(e){setErr(e.message);}};
+  const deleteTask=id=>{if(!window.confirm('Delete this task?'))return;try{API.deleteTask(id,user.id,user.role);refresh();}catch(e){setErr(e.message);}};
+  const tabs=[
+    {id:'all',label:'All'},
+    {id:'mine',label:'My Tasks'},
+    {id:'todo',label:'To Do'},
+    {id:'progress',label:'In Progress'},
+    {id:'review',label:'In Review'},
+    {id:'done',label:'Done'},
+    {id:'overdue',label:'🔥 Overdue'},
+  ];
+  return<div>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+      <div className="section-title" style={{margin:0}}>Tasks</div>
+      <button className="btn btn-primary" onClick={()=>setModal('create')}>+ New Task</button>
+    </div>
+    <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+      <select value={projectFilter} onChange={e=>setProjectFilter(e.target.value)} style={{width:'auto',padding:'6px 10px',fontSize:13}}>
+        <option value="all">All Projects</option>
+        {allProjects.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+        {tabs.map(t=><button key={t.id} className={`tab${filter===t.id?' active':''}`} onClick={()=>setFilter(t.id)}>{t.label}</button>)}
+      </div>
+    </div>
+    {err&&<div className="alert alert-danger" onClick={()=>setErr('')} style={{cursor:'pointer'}}>{err}</div>}
+    <div style={{fontSize:12,color:'var(--text3)',marginBottom:14,fontFamily:'var(--font-mono)'}}>{filtered.length} task{filtered.length!==1?'s':''}</div>
+    {filtered.map(t=>{
+      const assignee=DB.users.find(u=>u.id===t.assigneeId);
+      const project=DB.projects.find(p=>p.id===t.projectId);
+      const canDelete=user.role==='admin'||t.createdBy===user.id;
+      return<div key={t.id} className="task-row" onClick={()=>setDetailTask({...t})}>
+        <div style={{width:4,height:40,borderRadius:2,flexShrink:0,background:t.priority==='high'?'var(--danger)':t.priority==='low'?'var(--success)':'var(--warning)'}}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:14,fontWeight:500,color:'var(--text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{t.title}</div>
+          <div style={{fontSize:11,color:'var(--text3)',marginTop:2}}>{project?.name} · Due: {t.dueDate||'—'}</div>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}} onClick={e=>e.stopPropagation()}>
+          {getStatusTag(t)}
+          <Avatar user={assignee} size={26}/>
+          <button className="btn btn-ghost" style={{padding:'3px 7px',fontSize:13}} title="Edit" onClick={e=>{e.stopPropagation();setEditTask(t);}}>✏️</button>
+          {canDelete&&<button className="btn btn-ghost" style={{padding:'3px 7px',fontSize:13}} title="Delete" onClick={e=>{e.stopPropagation();deleteTask(t.id);}}>🗑️</button>}
+        </div>
+      </div>;
+    })}
+    {!filtered.length&&<div className="empty">No tasks match this filter</div>}
+    {modal==='create'&&<Modal title="Create New Task" onClose={()=>setModal(null)}><TaskForm user={user} projects={allProjects} onSave={createTask} onClose={()=>setModal(null)}/></Modal>}
+    {editTask&&<Modal title="Edit Task" onClose={()=>setEditTask(null)}><TaskForm user={user} projects={allProjects} initial={editTask} onSave={d=>updateTask(editTask.id,d)} onClose={()=>setEditTask(null)}/></Modal>}
+    {detailTask&&<TaskDetail task={detailTask} user={user} onUpdate={refresh} onClose={()=>setDetailTask(null)}/>}
+  </div>;
+}
+
+/* ======== TEAM ======== */
+function Team({user}){
+  const users=API.getUsers();
+  if(user.role!=='admin')return<div style={{marginTop:80}}><div className="empty">🔒 Admin access required to manage team members.</div></div>;
+  return<div>
+    <div className="section-title">Team Members</div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:16}}>
+      {users.map(u=>{
+        const uTasks=DB.tasks.filter(t=>t.assigneeId===u.id);
+        const uDone=uTasks.filter(t=>t.status==='done').length;
+        const uOverdue=uTasks.filter(isOverdue).length;
+        const uProjects=DB.projects.filter(p=>p.members.includes(u.id));
+        return<div key={u.id} className="card" style={{textAlign:'center'}}>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:14}}><Avatar user={u} size={52}/></div>
+          <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:16,marginBottom:2}}>{u.name}</div>
+          <div style={{fontSize:12,color:'var(--text3)',marginBottom:10}}>{u.email}</div>
+          <span className={`tag ${u.role==='admin'?'tag-admin':'tag-member'}`}>{u.role}</span>
+          <div style={{marginTop:16,display:'flex',justifyContent:'center',gap:20,padding:'12px 0',borderTop:'1px solid var(--border)',marginTop:14}}>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:22,color:'var(--text)'}}>{uTasks.length}</div>
+              <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.5px'}}>tasks</div>
+            </div>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:22,color:'var(--success)'}}>{uDone}</div>
+              <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.5px'}}>done</div>
+            </div>
+            {uOverdue>0&&<div style={{textAlign:'center'}}>
+              <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:22,color:'var(--danger)'}}>{uOverdue}</div>
+              <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.5px'}}>overdue</div>
+            </div>}
+            <div style={{textAlign:'center'}}>
+              <div style={{fontFamily:'var(--font-head)',fontWeight:700,fontSize:22,color:'var(--info)'}}>{uProjects.length}</div>
+              <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.5px'}}>projects</div>
+            </div>
+          </div>
+          <div style={{display:'flex',justifyContent:'center',gap:-8,marginTop:10}}>
+            {uProjects.slice(0,4).map(p=><div key={p.id} title={p.name} style={{width:10,height:10,borderRadius:'50%',background:p.color,marginLeft:4,border:'1px solid var(--bg2)'}}/>)}
+          </div>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+/* ======== APP SHELL ======== */
+const NAV=[
+  {id:'dashboard',label:'Dashboard',icon:'📊'},
+  {id:'projects',label:'Projects',icon:'📁'},
+  {id:'tasks',label:'Tasks',icon:'✅'},
+  {id:'team',label:'Team',icon:'👥'},
+];
+
+function App(){
+  const[authUser,setAuthUser]=useState(null);
+  const[page,setPage]=useState('dashboard');
+  if(!authUser)return<AuthScreen onAuth={u=>{setAuthUser(u);setPage('dashboard');}}/>;
+  const pages={
+    dashboard:<Dashboard user={authUser}/>,
+    projects:<Projects user={authUser}/>,
+    tasks:<Tasks user={authUser}/>,
+    team:<Team user={authUser}/>,
+  };
+  return<div style={{display:'flex',minHeight:'100vh'}}>
+    <aside className="sidebar">
+      <div style={{padding:'28px 20px 18px',borderBottom:'1px solid var(--border)'}}>
+        <div style={{fontFamily:'var(--font-head)',fontSize:22,fontWeight:800,color:'var(--text)',letterSpacing:'-0.5px'}}>
+          Team<span style={{color:'var(--accent)'}}>Flow</span>
+        </div>
+        <div style={{fontSize:11,color:'var(--text3)',marginTop:2,fontFamily:'var(--font-mono)'}}>Task Management</div>
+      </div>
+      <nav style={{flex:1,padding:'12px 0'}}>
+        {NAV.map(n=><div key={n.id} className={`nav-item${page===n.id?' active':''}`} onClick={()=>setPage(n.id)}>
+          <span className="nav-icon">{n.icon}</span>
+          <span>{n.label}</span>
+          {n.id==='tasks'&&(()=>{const ot=API.getTasks(authUser.id,authUser.role).filter(isOverdue);return ot.length>0?<span style={{marginLeft:'auto',background:'var(--danger)',color:'#fff',borderRadius:'10px',fontSize:10,padding:'1px 6px',fontFamily:'var(--font-mono)'}}>{ot.length}</span>:null;})()}
+        </div>)}
+      </nav>
+      <div style={{padding:'16px',borderTop:'1px solid var(--border)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12,padding:'8px',background:'var(--bg3)',borderRadius:'var(--radius)'}}>
+          <Avatar user={authUser} size={32}/>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:500,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{authUser.name}</div>
+            <span className={`tag ${authUser.role==='admin'?'tag-admin':'tag-member'}`} style={{fontSize:10,padding:'1px 6px'}}>{authUser.role}</span>
+          </div>
+        </div>
+        <button className="btn btn-secondary" style={{width:'100%',justifyContent:'center',fontSize:12}} onClick={()=>setAuthUser(null)}>Sign Out</button>
+      </div>
+    </aside>
+    <main className="main">
+      {pages[page]||pages.dashboard}
+    </main>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
